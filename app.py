@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 
 import re
+import secrets
+from base64 import b64decode
 
 from flask import Flask, jsonify, render_template, request, session
 
@@ -13,6 +15,9 @@ from db import Card, connect, get_card_by_id, get_random_card, init_db, insert_c
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+
+    upload_user = os.environ.get("UPLOAD_USER")
+    upload_pass = os.environ.get("UPLOAD_PASS")
 
     db_path_env = os.environ.get("DB_PATH")
     if db_path_env:
@@ -31,6 +36,21 @@ def create_app() -> Flask:
     @app.get("/")
     def index():
         return render_template("index.html")
+
+    def _check_import_auth() -> bool:
+        if not upload_user or not upload_pass:
+            return False
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Basic "):
+            return False
+        try:
+            decoded = b64decode(auth.removeprefix("Basic ").strip()).decode("utf-8")
+        except Exception:
+            return False
+        if ":" not in decoded:
+            return False
+        user, pwd = decoded.split(":", 1)
+        return secrets.compare_digest(user, upload_user) and secrets.compare_digest(pwd, upload_pass)
 
     def _get_history() -> tuple[list[int], int | None]:
         history = session.get("history")
@@ -90,7 +110,7 @@ def create_app() -> Flask:
         _save_history(history, pos)
         return jsonify(_card_to_json(card))
 
-    _SEP_RE = re.compile(r"\s*[-–—]\s*", flags=re.UNICODE)
+    _SEP_RE = re.compile(r"\s*[-–—;,\.]\s*", flags=re.UNICODE)
 
     def _parse_import_text(text: str) -> tuple[list[tuple[str, str]], list[dict]]:
         pairs: list[tuple[str, str]] = []
@@ -113,6 +133,11 @@ def create_app() -> Flask:
 
     @app.post("/api/import")
     def api_import():
+        if not upload_user or not upload_pass:
+            return jsonify({"error": "import_auth_not_configured"}), 500
+        if not _check_import_auth():
+            return jsonify({"error": "unauthorized"}), 401
+
         payload = request.get_json(silent=True) or {}
         text = payload.get("text")
         if not isinstance(text, str) or not text.strip():

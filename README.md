@@ -55,3 +55,11 @@ godny zaufania – trustworthy
 ```
 
 Supported separators: `-`, `–`, `—`. Empty lines are ignored.
+
+## Import authentication (Upload)
+
+Importing via **Upload → Import** requires a username/password (HTTP Basic Auth).
+
+Environment variables:
+- `UPLOAD_USER`
+- `UPLOAD_PASS`

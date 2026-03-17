@@ -6,5 +6,7 @@ services:
     environment:
       DB_PATH: /data/cards.sqlite
       # SECRET_KEY: "change-me"
+      UPLOAD_USER: "admin"
+      UPLOAD_PASS: "change-me"
     volumes:
       - ./data:/data

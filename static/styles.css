@@ -181,6 +181,29 @@ body {
   color: var(--muted);
 }
 
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.input:focus {
+  border-color: rgba(110, 168, 254, 0.45);
+  box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.18);
+}
+
 .textarea {
   width: 100%;
   resize: vertical;
@@ -213,4 +236,5 @@ body {
 @media (max-width: 520px) {
   .card { height: 280px; }
   .btn { padding: 10px 12px; }
+  .grid2 { grid-template-columns: 1fr; }
 }

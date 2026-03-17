@@ -6,6 +6,8 @@
   const nextBtn = document.getElementById("nextBtn");
   const uploadBtn = document.getElementById("uploadBtn");
   const uploadDialog = document.getElementById("uploadDialog");
+  const importUser = document.getElementById("importUser");
+  const importPass = document.getElementById("importPass");
   const importText = document.getElementById("importText");
   const importBtn = document.getElementById("importBtn");
   const importResult = document.getElementById("importResult");
@@ -42,10 +44,39 @@
 
   cardEl.addEventListener("click", toggleFlip);
 
-  async function apiPostJson(url, body) {
+  function toBasicAuthHeader(user, pass) {
+    const u = user ?? "";
+    const p = pass ?? "";
+    if (!u && !p) return null;
+    return `Basic ${btoa(`${u}:${p}`)}`;
+  }
+
+  function loadSavedAuth() {
+    try {
+      const raw = localStorage.getItem("cards_import_auth");
+      if (!raw) return { user: "", pass: "" };
+      const obj = JSON.parse(raw);
+      return {
+        user: typeof obj?.user === "string" ? obj.user : "",
+        pass: typeof obj?.pass === "string" ? obj.pass : "",
+      };
+    } catch {
+      return { user: "", pass: "" };
+    }
+  }
+
+  function saveAuth(user, pass) {
+    try {
+      localStorage.setItem("cards_import_auth", JSON.stringify({ user, pass }));
+    } catch {
+      // ignore
+    }
+  }
+
+  async function apiPostJson(url, body, extraHeaders) {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(extraHeaders ?? {}) },
       body: body ? JSON.stringify(body) : "{}",
     });
     const data = await res.json().catch(() => null);
@@ -78,8 +109,11 @@
 
   uploadBtn.addEventListener("click", () => {
     importResult.textContent = "";
+    const saved = loadSavedAuth();
+    importUser.value = saved.user;
+    importPass.value = saved.pass;
     uploadDialog.showModal();
-    importText.focus();
+    (importUser.value ? importPass : importUser).focus();
   });
 
   document.addEventListener("keydown", (e) => {
@@ -120,16 +154,28 @@
 
     importResult.textContent = "Importing...";
     try {
-      const data = await apiPostJson("/api/import", { text });
+      const user = importUser.value.trim();
+      const pass = importPass.value;
+      const auth = toBasicAuthHeader(user, pass);
+      const data = await apiPostJson(
+        "/api/import",
+        { text },
+        auth ? { Authorization: auth } : null
+      );
       const created = Number(data?.created ?? 0);
       const skipped = Number(data?.skipped ?? 0);
       const errCount = Array.isArray(data?.errors) ? data.errors.length : 0;
       importResult.textContent = `Created: ${created}, skipped: ${skipped}, errors: ${errCount}`;
+      saveAuth(user, pass);
       if (!currentCard) {
         await loadNext();
       }
     } catch (e) {
-      importResult.textContent = "Import failed.";
+      if (String(e?.message) === "unauthorized") {
+        importResult.textContent = "Unauthorized. Check username/password.";
+      } else {
+        importResult.textContent = "Import failed.";
+      }
     }
   });
 
