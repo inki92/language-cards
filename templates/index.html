@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cards — Polish</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Cards</div>
+      <button id="uploadBtn" class="btn btn-ghost" type="button">Upload</button>
+    </header>
+
+    <main class="container">
+      <section class="cardArea" aria-label="Flashcard">
+        <button id="card" class="card" type="button" aria-label="Card">
+          <div class="cardInner">
+            <div class="cardFace cardFront" id="cardFront">Load words</div>
+            <div class="cardFace cardBack" id="cardBack">Click Upload → paste word pairs</div>
+          </div>
+        </button>
+      </section>
+
+      <section class="controls" aria-label="Controls">
+        <button id="prevBtn" class="btn" type="button" aria-label="Previous (ArrowLeft)">
+          ←
+        </button>
+        <button id="nextBtn" class="btn btn-primary" type="button" aria-label="Next (ArrowRight)">
+          →
+        </button>
+      </section>
+    </main>
+
+    <dialog id="uploadDialog" class="dialog">
+      <form method="dialog" class="dialogForm">
+        <div class="dialogHeader">
+          <div class="dialogTitle">Import</div>
+          <button class="btn btn-ghost" value="cancel" type="submit">✕</button>
+        </div>
+
+        <label class="label" for="importText">Paste lines like: <span class="mono">zadbany – well-groomed</span></label>
+        <textarea id="importText" class="textarea" rows="10" placeholder="zadbany – well-groomed&#10;skąpy – stingy"></textarea>
+
+        <div class="dialogFooter">
+          <div id="importResult" class="muted"></div>
+          <div class="spacer"></div>
+          <button id="importBtn" class="btn btn-primary" value="noop" type="button">Import</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
